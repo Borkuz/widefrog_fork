@@ -1,0 +1,27 @@
+# --- Sensitive: credentials, sessions, network captures ---
+# Local config (service credentials / tokens) and generated download commands
+app_files/
+# Browser network captures contain cookies, login tokens, account ID and IP
+*.har
+# Cookie exports and environment files
+cookies*.txt
+*.cookies
+.env
+.env.*
+
+# --- Downloads ---
+media/
+downloads/
+output/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Backups / archives / OS files ---
+*.old.py
+*.zip
+.DS_Store

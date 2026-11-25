@@ -1,14 +1,16 @@
 import builtins
+import importlib
+import json
 import os
 import sys
+from urllib.parse import urlparse
 
 from utils.constants.macros import CONFIG_FILE, INF_MSG, DEFAULT_DEBUG_MODE
-from utils.main_service import main_service
-from utils.tools.args import get_config, check_query_args, check_help_args, check_input_args, check_tool_args
-from utils.tools.service import get_all_services
 
 
 def test_service():
+    from utils.main_service import main_service
+
     main_service.run_service(
         # _35mm_online.DEMO_URLS +
         # adtv_ae.DEMO_URLS +
@@ -83,6 +85,9 @@ def test_service():
 
 
 def first_setup(arguments):
+    from utils.tools.args import get_config, check_query_args
+    from utils.tools.service import get_all_services
+
     is_first = not os.path.exists(CONFIG_FILE)
     builtins.CONFIG = get_config(arguments)
     builtins.CONFIG["QUERY"] = check_query_args(arguments)
@@ -98,8 +103,61 @@ def first_setup(arguments):
     return is_first
 
 
+def run_catalog_index(arguments):
+    source_urls = [argument for argument in arguments if not argument.startswith("--")]
+    if len(source_urls) != 1:
+        sys.exit("The --index option requires exactly one URL.")
+
+    url = source_urls[0]
+    parsed_url = urlparse(url)
+    if (
+        parsed_url.scheme != "https"
+        or parsed_url.hostname is None
+        or parsed_url.username is not None
+        or parsed_url.password is not None
+    ):
+        sys.exit("The --index option requires one HTTPS service URL.")
+
+    service_name = parsed_url.hostname
+    if service_name.startswith("www."):
+        service_name = service_name[4:]
+    service_name = service_name.replace(".", "_")
+    module_name = f"services.{service_name}"
+    try:
+        service_module = importlib.import_module(module_name)
+    except ModuleNotFoundError as error:
+        if error.name == module_name:
+            sys.exit(f"No indexer service is available for {parsed_url.hostname}.")
+        raise
+
+    service = getattr(service_module, service_name, None)
+    if service is None:
+        sys.exit(f"The {parsed_url.hostname} module is not a valid service.")
+    service = service.initialize_service()
+    index_page = getattr(service, "index_page", None)
+    if not callable(index_page):
+        sys.exit(f"The {service.__name__} service does not support catalog indexing.")
+
+    try:
+        print(json.dumps(index_page(url), ensure_ascii=False, indent=2))
+    except (ValueError, RuntimeError) as error:
+        sys.exit(f"Failed to index {url}: {error}")
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
+    if "--index" in args:
+        run_catalog_index(args)
+        sys.exit(0)
+
+    from utils.tools.args import (
+        check_help_args,
+        check_input_args,
+        check_tool_args,
+    )
+    from utils.main_service import main_service
+    from utils.tools.service import get_all_services
+
     response = check_help_args(args)
     if response is not None and len(response) > 0:
         print(response)

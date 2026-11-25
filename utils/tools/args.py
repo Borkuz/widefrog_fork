@@ -55,6 +55,7 @@ def check_help_args(args):
             "--config\nExplains the config properties.\n\n"
             "--version\nDisplays the current app version.\n\n"
             "--services\nDisplays all available services\n\n"
+            "--index CONTENT_URL\nPrints public catalog metadata as JSON for services that support indexing\n\n"
             "--format=SERVICE_NAME\nDisplays example URLs for a service\n\n"
             "--query=collection1_index:element1_index:collection2_index:element2_index\nDownloads only an interval from a content collection\n\n"
             "--debug\nDisplays the exact error and where it happened so you can properly debug the app\n\n"
@@ -95,6 +96,8 @@ def check_help_args(args):
             "Usage examples:\n"
             f'python {APP_NAME}.py "CONTENT_URL"\n'
             "Downloads from URL.\n\n"
+            f'python {APP_NAME}.py --index "CONTENT_URL"\n'
+            "Prints public catalog metadata as JSON for services that support indexing.\n\n"
             f'python {APP_NAME}.py "LOCAL_FILE_PATH"\n'
             "Downloads from a local file that contains a list of URLs. Each URL is on a newline.\n\n"
             f'python {APP_NAME}.py "CONTENT" --query=1:2:3:4\n'
